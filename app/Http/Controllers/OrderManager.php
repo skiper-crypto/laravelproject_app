@@ -38,7 +38,7 @@ class OrderManager extends Controller
             )
             ->where(
                 "cart.user_id",
-                auth()->user()->id
+                auth()->id
             )
             ->groupBy(
                 "cart.product_id",
@@ -71,7 +71,7 @@ class OrderManager extends Controller
         }
 
         $order = new Orders();
-        $order->user_id = auth()->user()->id;
+        $order->user_id = auth()->id;
         $order->address = $request->address;
         $order->pincode = $request->pincode;
         $order->phone = $request->phone;
@@ -79,7 +79,7 @@ class OrderManager extends Controller
         $order->total_price = $totalPrice;
         $order->quantity = json_encode($quantities);
         if($order->save()){
-            DB::table("cart")->where("user_id",auth()->user()->id)->delete();
+            DB::table("cart")->where("user_id",auth()->id)->delete();
             $stripe = new StripeClient(config("app.STRIPE_KEY"));
 
             $checkoutSession = $stripe->checkout->sessions->create([
@@ -89,7 +89,7 @@ class OrderManager extends Controller
                 'payment_method_types' => ['card'],
                 'line_items' => $lineItems,
                 'mode' => 'payment',
-                'customer_email' => auth()->user()->email,
+                'customer_email' => auth()->email,
                 'metadata' => [
                     'order_id' => $order->id,
                 ],
@@ -136,7 +136,7 @@ class OrderManager extends Controller
 
     }
 function orderHistory() {
-    $orders = Orders::where('user_id', auth()->user()->id)->orderBy('id', "DESC")->paginate(5);
+    $orders = Orders::where('user_id', auth()->id)->orderBy('id', "DESC")->paginate(5);
         $orders->getCollection()->transform(function($order) {
             $productIds = json_decode($order->product_id, true);
             $quantities = json_decode($order->quantity, true);
